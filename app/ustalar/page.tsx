@@ -67,7 +67,7 @@ function UstalarContent() {
     };
   }, []);
 
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.az;
+  const t: any = TRANSLATIONS[lang] || TRANSLATIONS.az;
 
   const allUstalar = useMemo(() => {
     const base = USTALAR || [];
@@ -92,10 +92,10 @@ function UstalarContent() {
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase().trim();
       list = list.filter((u) => {
-        const nameMatch = u.name?.toLowerCase().includes(q);
-        const catMatch = u.category?.toLowerCase().includes(q);
-        const skillsMatch = Array.isArray(u.skills) && u.skills.some((s: string) => s.toLowerCase().includes(q));
-        const descMatch = u.description?.toLowerCase().includes(q);
+        const nameMatch = (u.name || "").toLowerCase().includes(q);
+        const catMatch = (u.category || "").toLowerCase().includes(q);
+        const skillsMatch = Array.isArray(u.skills) && u.skills.some((s: string) => (s || "").toLowerCase().includes(q));
+        const descMatch = (u.description || "").toLowerCase().includes(q);
         return nameMatch || catMatch || skillsMatch || descMatch;
       });
     }
@@ -120,7 +120,7 @@ function UstalarContent() {
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            {t.all_craftsmen || "Usta Kataloqu"}
+            {t.catalog_title || "Usta Kataloqu"}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Azərbaycan üzrə peşəkar ustaları dərhal axtarın və əlaqə saxlayın
