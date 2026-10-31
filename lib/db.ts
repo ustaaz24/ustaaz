@@ -1,4 +1,4 @@
-// lib/db.ts - Canlı Bulud Bazası və Sinxronizasiya Sistemi (Kompüter və Telefon üçün)
+// lib/db.ts - Canlı Bulud Bazası və Sinxronizasiya Sistemi (Google Firebase Realtime Database)
 
 export function normalizePhone(phone: string): string {
   if (!phone) return "";
@@ -8,131 +8,113 @@ export function normalizePhone(phone: string): string {
   return digits; // Məsələn: "501234567"
 }
 
-// Baza üçün Pulsuz Bulud Serveri REST API (Kompüter və telefonlar canlı sinxronlaşır)
-const CLOUD_API_URL = "https://kvdb.io/4y9pA2n9j8w7R6t5Y4u3/";
+// Sizin şəxsi Google Firebase Realtime Database Linkiniz:
+export const FIREBASE_URL = "https://ustaaz-24-default-rtdb.firebaseio.com";
 
-// 1. BÜTÜN HESABLARI OXU (Kompüter + Telefon)
+// 1. BÜTÜN HESABLARI OXU (Kompüter + Telefon Canlı Sinxronizasiya)
 export async function getAccounts(): Promise<any[]> {
-  let localList: any[] = [];
   try {
-    const raw = localStorage.getItem("all_accounts");
-    if (raw) localList = JSON.parse(raw);
-  } catch {}
-
-  try {
-    const res = await fetch(`${CLOUD_API_URL}ustaaz_accounts`, {
+    const res = await fetch(`${FIREBASE_URL}/accounts.json`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
       cache: "no-store",
     });
     if (res.ok) {
-      const cloudList = await res.json();
-      if (Array.isArray(cloudList)) {
-        const map = new Map();
-        [...localList, ...cloudList].forEach((acc) => {
-          const norm = normalizePhone(acc.phone);
-          if (norm) map.set(norm + "_" + acc.role, acc);
-        });
-        const merged = Array.from(map.values());
+      const data = await res.json();
+      if (data && typeof data === "object") {
+        const list = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
         try {
-          localStorage.setItem("all_accounts", JSON.stringify(merged));
+          localStorage.setItem("all_accounts", JSON.stringify(list));
         } catch {}
-        return merged;
+        return list;
       }
     }
+  } catch (err) {}
+
+  try {
+    const raw = localStorage.getItem("all_accounts");
+    if (raw) return JSON.parse(raw);
   } catch {}
 
-  return localList;
+  return [];
 }
 
-// 2. YENİ HESABI YADDA SAXLA (Buluda və Lokala)
+// 2. YENİ HESABI YADDA SAXLA (Google Firebase Buluduna və Brauzerə)
 export async function saveAccount(newAccount: any): Promise<boolean> {
-  let accounts = await getAccounts();
   const norm = normalizePhone(newAccount.phone);
-  
-  const index = accounts.findIndex(
-    (a) => normalizePhone(a.phone) === norm && a.role === newAccount.role
-  );
-  if (index >= 0) {
-    accounts[index] = { ...accounts[index], ...newAccount };
-  } else {
-    accounts.push(newAccount);
-  }
+  const key = `${norm}_${newAccount.role || "user"}`;
 
+  // 1. Firebase Buluduna yaz (Bütün cihazlar dərhal görsün)
   try {
-    localStorage.setItem("all_accounts", JSON.stringify(accounts));
-  } catch {}
-
-  try {
-    await fetch(`${CLOUD_API_URL}ustaaz_accounts`, {
-      method: "POST",
+    await fetch(`${FIREBASE_URL}/accounts/${key}.json`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(accounts),
+      body: JSON.stringify(newAccount),
     });
+  } catch (err) {}
+
+  // 2. Lokal yaddaşı da yenilə
+  try {
+    const raw = localStorage.getItem("all_accounts");
+    let accounts: any[] = raw ? JSON.parse(raw) : [];
+    const idx = accounts.findIndex(
+      (a) => normalizePhone(a.phone) === norm && a.role === newAccount.role
+    );
+    if (idx >= 0) accounts[idx] = newAccount;
+    else accounts.push(newAccount);
+    localStorage.setItem("all_accounts", JSON.stringify(accounts));
   } catch {}
 
   return true;
 }
 
-// 3. BÜTÜN USTALARI OXU (Canlı - Saxta ustalar yoxdur)
+// 3. BÜTÜN REAL USTALARI OXU (Kompüter və Telefonda Canlı Görünüş)
 export async function getUstalar(): Promise<any[]> {
-  let localList: any[] = [];
   try {
-    const raw = localStorage.getItem("custom_ustalar");
-    if (raw) localList = JSON.parse(raw);
-  } catch {}
-
-  try {
-    const res = await fetch(`${CLOUD_API_URL}ustaaz_craftsmen`, {
+    const res = await fetch(`${FIREBASE_URL}/ustalar.json`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
       cache: "no-store",
     });
     if (res.ok) {
-      const cloudList = await res.json();
-      if (Array.isArray(cloudList)) {
-        const map = new Map();
-        [...localList, ...cloudList].forEach((u) => {
-          const norm = normalizePhone(u.phone);
-          if (norm) map.set(norm, u);
-          else if (u.id) map.set(u.id, u);
-        });
-        const merged = Array.from(map.values());
+      const data = await res.json();
+      if (data && typeof data === "object") {
+        const list = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
         try {
-          localStorage.setItem("custom_ustalar", JSON.stringify(merged));
+          localStorage.setItem("custom_ustalar", JSON.stringify(list));
         } catch {}
-        return merged;
+        return list;
       }
     }
+  } catch (err) {}
+
+  try {
+    const raw = localStorage.getItem("custom_ustalar");
+    if (raw) return JSON.parse(raw);
   } catch {}
 
-  return localList;
+  return [];
 }
 
-// 4. YENİ USTANI YADDA SAXLA (Buluda və Lokala)
+// 4. YENİ USTANI YADDA SAXLA (Buluda Canlı Göndər)
 export async function saveUsta(newUsta: any): Promise<boolean> {
-  let ustalar = await getUstalar();
   const norm = normalizePhone(newUsta.phone);
-  
-  const index = ustalar.findIndex(
-    (u) => normalizePhone(u.phone) === norm || (newUsta.id && u.id === newUsta.id)
-  );
-  if (index >= 0) {
-    ustalar[index] = { ...ustalar[index], ...newUsta };
-  } else {
-    ustalar.unshift(newUsta);
-  }
 
+  // 1. Firebase Buluduna yaz
   try {
-    localStorage.setItem("custom_ustalar", JSON.stringify(ustalar));
-  } catch {}
-
-  try {
-    await fetch(`${CLOUD_API_URL}ustaaz_craftsmen`, {
-      method: "POST",
+    await fetch(`${FIREBASE_URL}/ustalar/${norm}.json`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(ustalar),
+      body: JSON.stringify(newUsta),
     });
+  } catch (err) {}
+
+  // 2. Lokal yaddaşı yenilə
+  try {
+    const raw = localStorage.getItem("custom_ustalar");
+    let ustalar: any[] = raw ? JSON.parse(raw) : [];
+    const idx = ustalar.findIndex((u) => normalizePhone(u.phone) === norm);
+    if (idx >= 0) ustalar[idx] = newUsta;
+    else ustalar.unshift(newUsta);
+    localStorage.setItem("custom_ustalar", JSON.stringify(ustalar));
   } catch {}
 
   return true;
