@@ -280,7 +280,7 @@ function UstalarContent() {
                 <span className="text-slate-400 font-semibold">Aktiv filterlər:</span>
                 {searchTerm && (
                   <span className="bg-blue-600/20 text-blue-300 border border-blue-500/30 px-2.5 py-1 rounded-xl">
-                    "{searchTerm}"
+                    &ldquo;{searchTerm}&rdquo;
                   </span>
                 )}
                 {selectedCat && (
