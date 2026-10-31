@@ -66,7 +66,7 @@ export default function Home() {
     return () => window.removeEventListener("langChange", handleLangChange);
   }, []);
 
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.az;
+  const t: any = TRANSLATIONS[lang] || TRANSLATIONS.az;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
