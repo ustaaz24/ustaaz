@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #0f172a;
+}
+
+html.dark {
+  --bg-main: #0b1120;
+  --bg-card: #162032;
+  --text-main: #f1f5f9;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Mausla seçilən mətnin göz qamaşdırmadan aydın oxunması */
+::selection {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+html.dark ::selection {
+  background-color: #3b82f6;
+  color: #ffffff;
+}
